@@ -13,7 +13,7 @@ def theory(request):
 
 def home(request):
 
-    rows = range(1, 101)
+    rows = range(1, 21)
 
     results = []
 
