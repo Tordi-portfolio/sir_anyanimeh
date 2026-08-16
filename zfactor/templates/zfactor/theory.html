@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theory Behind the CO₂ Z-Factor Calculator</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --navy-950: #080d16;
+            --navy-900: #0b1424;
+            --navy-800: #101c31;
+            --navy-700: #16253d;
+            --line-soft: #1e2c44;
+            --amber: #e3a13a;
+            --amber-soft: #c98a2e;
+            --teal: #4ba99e;
+            --ink: #eef1f6;
+            --ink-dim: #aab4c6;
+            --ink-faint: #6f7d95;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--navy-950);
+            background-image:
+                radial-gradient(circle at 90% 4%, rgba(227, 161, 58, 0.05), transparent 40%),
+                radial-gradient(circle at 4% 96%, rgba(75, 169, 158, 0.06), transparent 40%);
+            color: var(--ink);
+            font-family: 'Inter', -apple-system, sans-serif;
+            line-height: 1.7;
+        }
+
+        a { color: inherit; }
+
+        /* ---------- Header ---------- */
+        .site-header {
+            padding: 48px 32px 34px;
+            border-bottom: 1px solid var(--line-soft);
+        }
+
+        .header-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--amber);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 16px;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 22px;
+            height: 1px;
+            background: var(--amber);
+            display: inline-block;
+        }
+
+        h1 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: clamp(26px, 3.4vw, 38px);
+            letter-spacing: -0.01em;
+            margin: 0 0 10px;
+            max-width: 640px;
+        }
+
+        .header-sub {
+            font-size: 14.5px;
+            color: var(--ink-dim);
+            max-width: 560px;
+            margin: 0;
+        }
+
+        .back-link {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            letter-spacing: 0.04em;
+            color: var(--teal);
+            text-decoration: none;
+            border: 1px solid rgba(75, 169, 158, 0.35);
+            background: rgba(75, 169, 158, 0.08);
+            padding: 8px 14px;
+            border-radius: 5px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .back-link:hover {
+            background: rgba(75, 169, 158, 0.16);
+            border-color: rgba(75, 169, 158, 0.55);
+        }
+
+        /* ---------- Layout ---------- */
+        .layout {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 40px 32px 90px;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 48px;
+            align-items: start;
+        }
+
+        nav.toc {
+            position: sticky;
+            top: 28px;
+        }
+
+        .toc-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin: 0 0 14px;
+        }
+
+        .toc ol {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border-left: 1px solid var(--line-soft);
+        }
+
+        .toc li {
+            margin: 0;
+        }
+
+        .toc a {
+            display: block;
+            font-size: 13px;
+            color: var(--ink-dim);
+            text-decoration: none;
+            padding: 7px 0 7px 16px;
+            border-left: 2px solid transparent;
+            margin-left: -1px;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .toc a:hover {
+            color: var(--amber);
+            border-left-color: var(--amber);
+        }
+
+        .toc .num {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--ink-faint);
+            margin-right: 8px;
+            font-size: 11.5px;
+        }
+
+        /* ---------- Article ---------- */
+        article {
+            min-width: 0;
+        }
+
+        section {
+            padding-top: 8px;
+            margin-bottom: 44px;
+            scroll-margin-top: 24px;
+        }
+
+        section:first-of-type {
+            margin-top: 0;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-head .index {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: var(--amber);
+            flex-shrink: 0;
+        }
+
+        h2 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 22px;
+            margin: 0;
+            color: var(--ink);
+        }
+
+        p {
+            color: var(--ink-dim);
+            font-size: 15px;
+            margin: 0 0 16px;
+        }
+
+        .lede {
+            font-size: 16px;
+            color: var(--ink);
+        }
+
+        .equation {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            color: var(--amber);
+            text-align: center;
+            background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            padding: 22px 18px;
+            margin: 20px 0;
+            letter-spacing: 0.01em;
+            overflow-x: auto;
+        }
+
+        /* ---------- Tables ---------- */
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            margin: 6px 0 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13.5px;
+        }
+
+        thead th {
+            background: var(--navy-700);
+            color: var(--ink-dim);
+            text-align: left;
+            font-weight: 500;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--line-soft);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--line-soft);
+            color: var(--ink);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(227, 161, 58, 0.03);
+        }
+
+        td.symbol, td.coef {
+            color: var(--amber);
+            font-weight: 600;
+            width: 90px;
+        }
+
+        /* ---------- Lists ---------- */
+        ol.steps {
+            list-style: none;
+            counter-reset: step;
+            padding: 0;
+            margin: 0;
+        }
+
+        ol.steps li {
+            counter-increment: step;
+            position: relative;
+            padding: 0 0 18px 40px;
+            border-left: 1px solid var(--line-soft);
+            margin-left: 11px;
+            color: var(--ink-dim);
+            font-size: 14.5px;
+        }
+
+        ol.steps li:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
+        }
+
+        ol.steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: -12px;
+            top: -1px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--navy-900);
+            border: 1px solid var(--teal);
+            color: var(--teal);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        ul.plain {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul.plain li {
+            position: relative;
+            padding: 0 0 12px 20px;
+            color: var(--ink-dim);
+            font-size: 14.5px;
+        }
+
+        ul.plain li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--amber);
+        }
+
+        .callout {
+            border-left: 3px solid var(--teal);
+            background: rgba(75, 169, 158, 0.06);
+            border-radius: 0 6px 6px 0;
+            padding: 16px 20px;
+            margin: 6px 0 20px;
+        }
+
+        .callout p {
+            margin: 0;
+            color: var(--ink);
+            font-size: 14.5px;
+        }
+
+        /* ---------- Workflow ---------- */
+        .workflow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            margin: 20px 0;
+        }
+
+        .workflow-step {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            letter-spacing: 0.04em;
+            color: var(--ink);
+            background: var(--navy-800);
+            border: 1px solid var(--line-soft);
+            border-radius: 6px;
+            padding: 10px 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .workflow-arrow {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--teal);
+            font-size: 14px;
+            padding: 4px 0;
+        }
+
+        /* ---------- References ---------- */
+        ul.refs {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            counter-reset: ref;
+        }
+
+        ul.refs li {
+            counter-increment: ref;
+            position: relative;
+            padding: 0 0 14px 34px;
+            color: var(--ink-dim);
+            font-size: 14px;
+        }
+
+        ul.refs li::before {
+            content: "[" counter(ref) "]";
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--amber);
+            font-size: 12px;
+        }
+
+        @media (max-width: 820px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            nav.toc {
+                position: static;
+                border-bottom: 1px solid var(--line-soft);
+                padding-bottom: 20px;
+                margin-bottom: 12px;
+            }
+            .toc ol {
+                border-left: none;
+                columns: 2;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .site-header { padding: 36px 20px 26px; }
+            .layout { padding: 32px 20px 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <div>
+                <p class="eyebrow">PVT &amp; Gas Properties Module</p>
+                <h1>Theory Behind the CO₂ Compressibility Factor Calculator</h1>
+                <p class="header-sub">This project was developed to estimate the compressibility factor (Z-factor) of carbon dioxide using a polynomial correlation, from pressure and temperature inputs, with a graphical representation of the relationship.</p>
+            </div>
+            <a class="back-link" href="{% url 'home' %}">← Back to Calculator</a>
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <nav class="toc">
+            <p class="toc-label">On this page</p>
+            <ol>
+                <li><a href="#introduction"><span class="num">01</span>Introduction</a></li>
+                <li><a href="#z-factor"><span class="num">02</span>The Z-Factor</a></li>
+                <li><a href="#correlation"><span class="num">03</span>Polynomial Correlation</a></li>
+                <li><a href="#methodology"><span class="num">04</span>Methodology</a></li>
+                <li><a href="#graph"><span class="num">05</span>Graph Interpretation</a></li>
+                <li><a href="#workflow"><span class="num">06</span>Project Workflow</a></li>
+                <li><a href="#references"><span class="num">07</span>References</a></li>
+            </ol>
+        </nav>
+
+        <article>
+
+            <section id="introduction">
+                <div class="section-head">
+                    <span class="index">01</span>
+                    <h2>Introduction</h2>
+                </div>
+                <p class="lede">Carbon dioxide plays an important role in petroleum engineering, particularly in enhanced oil recovery (EOR), carbon capture and storage (CCS), reservoir simulation, and pipeline transportation.</p>
+                <p>Because CO₂ behaves as a real gas, the ideal gas law cannot accurately describe its behavior under reservoir conditions. Therefore, a correction factor known as the compressibility factor (Z-factor) is introduced.</p>
+            </section>
+
+            <section id="z-factor">
+                <div class="section-head">
+                    <span class="index">02</span>
+                    <h2>The Compressibility Factor (Z-Factor)</h2>
+                </div>
+                <p>The compressibility factor is a dimensionless quantity that measures the deviation of a real gas from ideal-gas behavior.</p>
+                <div class="equation">Z = PV / nRT</div>
+                <p>Where:</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Symbol</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="symbol">Z</td><td>Compressibility factor</td></tr>
+                            <tr><td class="symbol">P</td><td>Pressure</td></tr>
+                            <tr><td class="symbol">V</td><td>Gas volume</td></tr>
+                            <tr><td class="symbol">n</td><td>Number of moles</td></tr>
+                            <tr><td class="symbol">R</td><td>Universal gas constant</td></tr>
+                            <tr><td class="symbol">T</td><td>Absolute temperature</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="correlation">
+                <div class="section-head">
+                    <span class="index">03</span>
+                    <h2>Polynomial Correlation</h2>
+                </div>
+                <p>This project uses a third-order polynomial correlation to estimate the compressibility factor.</p>
+                <div class="equation">Z = a + bP + cT + dP² + eT² + fPT + gP³ + hT³ + iP²T + jPT²</div>
+                <p>The coefficients used in this study are fixed.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Coefficient</th><th>Value</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="coef">a</td><td>0.78</td></tr>
+                            <tr><td class="coef">b</td><td>-0.08</td></tr>
+                            <tr><td class="coef">c</td><td>0.35</td></tr>
+                            <tr><td class="coef">d</td><td>0.04</td></tr>
+                            <tr><td class="coef">e</td><td>-0.02</td></tr>
+                            <tr><td class="coef">f</td><td>0.03</td></tr>
+                            <tr><td class="coef">g</td><td>-0.004</td></tr>
+                            <tr><td class="coef">h</td><td>0.002</td></tr>
+                            <tr><td class="coef">i</td><td>-0.003</td></tr>
+                            <tr><td class="coef">j</td><td>0.005</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="methodology">
+                <div class="section-head">
+                    <span class="index">04</span>
+                    <h2>Methodology</h2>
+                </div>
+                <p>The methodology used in this project consists of four stages.</p>
+                <ol class="steps">
+                    <li>The user enters pressure and temperature values.</li>
+                    <li>The polynomial correlation calculates the Z-factor.</li>
+                    <li>The application generates a results table.</li>
+                    <li>A graph of Z-factor versus pressure is plotted for different temperatures.</li>
+                </ol>
+            </section>
+
+            <section id="graph">
+                <div class="section-head">
+                    <span class="index">05</span>
+                    <h2>Graph Interpretation</h2>
+                </div>
+                <p>The graph generated by the application uses:</p>
+                <ul class="plain">
+                    <li>X-axis = Pressure (psi)</li>
+                    <li>Y-axis = CO₂ Z-factor</li>
+                    <li>Curves = Temperature (°C)</li>
+                </ul>
+                <div class="callout">
+                    <p>A decrease in the Z-factor indicates a greater deviation from ideal-gas behavior. An increase in the Z-factor indicates that the gas is becoming less compressible.</p>
+                </div>
+            </section>
+
+            <section id="workflow">
+                <div class="section-head">
+                    <span class="index">06</span>
+                    <h2>Project Workflow</h2>
+                </div>
+                <div class="workflow">
+                    <div class="workflow-step">Pressure + Temperature</div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">Polynomial Correlation</div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">Z-factor Calculation</div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">Results Table</div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step">Graphical Representation</div>
+                </div>
+            </section>
+
+            <section id="references">
+                <div class="section-head">
+                    <span class="index">07</span>
+                    <h2>References</h2>
+                </div>
+                <ul class="refs">
+                    <li>Ahmed, T. Reservoir Engineering Handbook.</li>
+                    <li>McCain, W. D. Petroleum Reservoir Fluid Property Correlations.</li>
+                    <li>Standing, M. B., and Katz, D. L. Compressibility Factors for Natural Gases.</li>
+                </ul>
+            </section>
+
+        </article>
+    </div>
+
+</body>
+</html>
