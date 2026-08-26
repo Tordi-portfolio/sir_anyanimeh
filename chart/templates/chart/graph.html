@@ -1,0 +1,459 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Z-Factor Chart — CH4-CO2-H2O / CO2-H2O PVT Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-950: #0a0e1a;
+    --navy-900: #0f1524;
+    --navy-800: #161e30;
+    --navy-700: #1f293e;
+    --navy-600: #2b3752;
+    --amber: #e8a33d;
+    --amber-soft: rgba(232, 163, 61, 0.15);
+    --teal: #3ba3a0;
+    --teal-soft: rgba(59, 163, 160, 0.15);
+    --text-primary: #eef1f7;
+    --text-muted: #8b93a7;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 15% 0%, var(--navy-800) 0%, var(--navy-950) 55%);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+
+  .page {
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  nav.top-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+
+  nav.top-nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--text-muted);
+    background: var(--navy-800);
+    border: 1px solid var(--border-subtle);
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav.top-nav a.active {
+    color: var(--amber);
+    border-color: rgba(232, 163, 61, 0.4);
+    background: var(--amber-soft);
+  }
+
+  nav.top-nav a:hover { color: var(--text-primary); }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.9rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  h1 span { color: var(--amber); }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    background: var(--teal-soft);
+    border: 1px solid rgba(59, 163, 160, 0.35);
+    padding: 5px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 6px 0 28px;
+    max-width: 720px;
+    line-height: 1.5;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--navy-800);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .stat-card .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-card .value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--amber);
+  }
+
+  .chart-shell {
+    background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 24px 20px 12px;
+    box-shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.6);
+    position: relative;
+  }
+
+  .chart-shell::before {
+    content: "READ-ONLY";
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .chart-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 2px;
+  }
+
+  .chart-caption {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    margin: 0 0 16px;
+  }
+
+  .chart-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background: var(--navy-900);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+  }
+
+  .chart-controls label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-right: 2px;
+  }
+
+  .chart-controls select {
+    background: var(--navy-800);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    min-width: 180px;
+  }
+
+  .chart-controls button {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .chart-controls button:hover { color: var(--text-primary); border-color: var(--amber); }
+
+  .chart-controls .hint {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-left: auto;
+  }
+
+  #zchart-container {
+    position: relative;
+    height: 720px;
+    width: 100%;
+  }
+
+  footer {
+    margin-top: 20px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <nav class="top-nav">
+    <a href="{% url 'chart:zfactor_chart' %}" class="active">Chart</a>
+    <a href="{% url 'chart:zfactor_data_list' %}">Complete Data Table</a>
+  </nav>
+  <header>
+    <h1>Z-Factor <span>Isotherm</span> Chart</h1>
+    <span class="badge">Standing–Katz Style</span>
+  </header>
+  <p class="subtitle">
+    Gas compressibility factor (Z) plotted against pressure, with a separate isotherm
+    line for every simulated temperature. Data is fixed and rendered directly from
+    the loaded PVT dataset — the chart is display-only and cannot be edited.
+  </p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Data Points</div>
+      <div class="value">{{ point_count }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Isotherms</div>
+      <div class="value">{{ temperature_count }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pressure Range</div>
+      <div class="value">{{ min_pressure|floatformat:0 }}–{{ max_pressure|floatformat:0 }} psia</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Z Range</div>
+      <div class="value">{{ min_z|floatformat:3 }}–{{ max_z|floatformat:3 }}</div>
+    </div>
+  </div>
+
+  <div class="chart-shell">
+    <p class="chart-title">Z vs Pressure — by Temperature</p>
+    <p class="chart-caption">Y: Z-factor &nbsp;·&nbsp; X: Pressure (psia) &nbsp;·&nbsp; Series: Temperature (°C) — colored cool (blue) to hot (red)</p>
+    <div class="chart-controls">
+      <label for="focus-select">Focus isotherm</label>
+      <select id="focus-select">
+        <option value="">All temperatures</option>
+      </select>
+      <button type="button" id="reset-focus-btn">Show All</button>
+      <span class="hint">Hover a line or legend entry to trace it · click a legend entry to hide/show it</span>
+    </div>
+    <div id="zchart-container">
+      <canvas id="zFactorChart"></canvas>
+    </div>
+  </div>
+
+  <footer>CH4–CO2–H2O &amp; CO2–H2O PVT SIMULATION DATASET · DJANGO + CHART.JS · NON-INTERACTIVE DISPLAY</footer>
+</div>
+
+{{ chart_data|json_script:"zfactor-data" }}
+<script src="{% static 'chart/js/chart.umd.min.js' %}"></script>
+<script>
+  const datasets = JSON.parse(document.getElementById('zfactor-data').textContent);
+  const n = datasets.length;
+
+  // Cool-to-hot color ramp mapped directly to temperature order: the coldest
+  // isotherm is blue, the hottest is red, with amber/green in between. This
+  // makes it possible to tell roughly which temperature a line belongs to
+  // just by its color, and keeps adjacent isotherms visually distinct.
+  function rampColor(i, alpha) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const hue = 220 - 220 * t; // 220 (blue) -> 0 (red)
+    const sat = 78;
+    const light = 58;
+    return `hsla(${hue.toFixed(0)}, ${sat}%, ${light}%, ${alpha})`;
+  }
+
+  const FULL_ALPHA = 0.95;
+  const DIM_ALPHA = 0.10;
+  const FOCUS_ALPHA = 1;
+
+  const chartDatasets = datasets.map((series, i) => ({
+    label: series.label,
+    data: series.data,
+    borderColor: rampColor(i, FULL_ALPHA),
+    backgroundColor: rampColor(i, FULL_ALPHA),
+    borderWidth: 2.25,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: rampColor(i, 1),
+    pointHoverBorderColor: '#0a0e1a',
+    pointHoverBorderWidth: 1.5,
+    tension: 0.25,
+    fill: false,
+    _baseColor: rampColor(i, FULL_ALPHA),
+    _dimColor: rampColor(i, DIM_ALPHA),
+    _focusColor: rampColor(i, FOCUS_ALPHA),
+  }));
+
+  const ctx = document.getElementById('zFactorChart').getContext('2d');
+  let activeIndex = null;   // hover-driven highlight (temporary)
+  let lockedIndex = null;   // focus-select-driven highlight (persistent)
+
+  function applyHighlight() {
+    const target = lockedIndex !== null ? lockedIndex : activeIndex;
+    chart.data.datasets.forEach((ds, i) => {
+      if (target === null) {
+        ds.borderColor = ds._baseColor;
+        ds.borderWidth = 2.25;
+        ds.order = 0;
+      } else if (i === target) {
+        ds.borderColor = ds._focusColor;
+        ds.borderWidth = 4;
+        ds.order = -1; // draw the highlighted line last / on top
+      } else {
+        ds.borderColor = ds._dimColor;
+        ds.borderWidth = 1.5;
+        ds.order = 0;
+      }
+    });
+    chart.update('none');
+  }
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: chartDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      // Locked, read-only display: no zoom/pan, no editing of any kind.
+      // Hover/legend interactions only change which line is visually
+      // highlighted — they never alter the underlying data.
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
+      interaction: { mode: 'nearest', intersect: false },
+      onHover: (event, elements) => {
+        if (lockedIndex !== null) return;
+        const newActive = elements.length ? elements[0].datasetIndex : null;
+        if (newActive !== activeIndex) {
+          activeIndex = newActive;
+          applyHighlight();
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Pressure (psia)', color: '#8b93a7', font: { family: 'IBM Plex Mono', size: 13, weight: '500' } },
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          ticks: { color: '#aab2c5', font: { family: 'IBM Plex Mono', size: 11 } },
+        },
+        y: {
+          title: { display: true, text: 'Z-Factor', color: '#8b93a7', font: { family: 'IBM Plex Mono', size: 13, weight: '500' } },
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          ticks: { color: '#aab2c5', font: { family: 'IBM Plex Mono', size: 11 } },
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          align: 'start',
+          labels: {
+            color: '#eef1f7',
+            boxWidth: 14,
+            boxHeight: 3,
+            padding: 10,
+            font: { family: 'IBM Plex Mono', size: 10.5 },
+          },
+          onHover: (event, legendItem) => {
+            if (lockedIndex !== null) return;
+            activeIndex = legendItem.datasetIndex;
+            applyHighlight();
+          },
+          onLeave: () => {
+            if (lockedIndex !== null) return;
+            activeIndex = null;
+            applyHighlight();
+          },
+        },
+        tooltip: {
+          backgroundColor: '#161e30',
+          borderColor: 'rgba(255,255,255,0.12)',
+          borderWidth: 1,
+          titleFont: { family: 'IBM Plex Mono', size: 11 },
+          bodyFont: { family: 'IBM Plex Mono', size: 11 },
+          callbacks: {
+            title: (items) => `${items[0].dataset.label}`,
+            label: (item) => `P = ${item.parsed.x.toLocaleString()} psia   Z = ${item.parsed.y.toFixed(4)}`,
+          },
+        },
+      },
+    },
+  });
+
+  // --- Focus-isotherm dropdown: locks a highlight on independent of hover,
+  // useful for touch devices and for carefully tracing a single curve. ---
+  const focusSelect = document.getElementById('focus-select');
+  datasets.forEach((series, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = series.label;
+    focusSelect.appendChild(opt);
+  });
+
+  focusSelect.addEventListener('change', () => {
+    lockedIndex = focusSelect.value === '' ? null : parseInt(focusSelect.value, 10);
+    activeIndex = null;
+    applyHighlight();
+  });
+
+  document.getElementById('reset-focus-btn').addEventListener('click', () => {
+    lockedIndex = null;
+    activeIndex = null;
+    focusSelect.value = '';
+    applyHighlight();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Data Table — CH4-CO2-H2O / CO2-H2O PVT Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-950: #0a0e1a;
+    --navy-900: #0f1524;
+    --navy-800: #161e30;
+    --navy-700: #1f293e;
+    --navy-600: #2b3752;
+    --amber: #e8a33d;
+    --amber-soft: rgba(232, 163, 61, 0.15);
+    --teal: #3ba3a0;
+    --teal-soft: rgba(59, 163, 160, 0.15);
+    --red: #c96a6a;
+    --red-soft: rgba(201, 106, 106, 0.15);
+    --text-primary: #eef1f7;
+    --text-muted: #8b93a7;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 15% 0%, var(--navy-800) 0%, var(--navy-950) 55%);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+
+  .page { max-width: 1180px; margin: 0 auto; }
+
+  nav.top-nav { display: flex; gap: 8px; margin-bottom: 22px; }
+  nav.top-nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--text-muted);
+    background: var(--navy-800);
+    border: 1px solid var(--border-subtle);
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  nav.top-nav a.active { color: var(--amber); border-color: rgba(232, 163, 61, 0.4); background: var(--amber-soft); }
+  nav.top-nav a:hover { color: var(--text-primary); }
+
+  header { margin-bottom: 6px; }
+
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0; letter-spacing: -0.01em; }
+  h1 span { color: var(--amber); }
+
+  .subtitle { color: var(--text-muted); font-size: 0.95rem; margin: 6px 0 24px; max-width: 760px; line-height: 1.5; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .stat-card { background: var(--navy-800); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px 16px; }
+  .stat-card .label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .stat-card .value { font-family: 'Fraunces', serif; font-size: 1.35rem; font-weight: 600; color: var(--amber); }
+  .stat-card.outlier .value { color: var(--red); }
+
+  form.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+    background: var(--navy-800);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+  form.filters .field { display: flex; flex-direction: column; gap: 5px; }
+  form.filters label { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+  form.filters select, form.filters input[type="text"] {
+    background: var(--navy-900);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    min-width: 160px;
+  }
+  form.filters .checkbox-field { flex-direction: row; align-items: center; gap: 6px; }
+  form.filters button {
+    background: var(--amber);
+    color: var(--navy-950);
+    border: none;
+    border-radius: 7px;
+    padding: 9px 18px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  form.filters .clear-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 9px 4px;
+  }
+  form.filters .clear-link:hover { color: var(--text-primary); }
+
+  .table-shell {
+    background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 4px;
+    box-shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.6);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .table-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px 10px;
+  }
+  .table-header-bar .title { font-family: 'Fraunces', serif; font-size: 1.02rem; font-weight: 600; }
+  .table-header-bar .readonly-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .table-scroll { overflow-x: auto; max-height: 68vh; overflow-y: auto; border-top: 1px solid var(--border-subtle); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--navy-700);
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr.outlier-row { background: var(--red-soft); }
+  tbody tr.outlier-row td { color: #e8b3b3; }
+  .source-cell { color: var(--text-muted); font-size: 0.72rem; }
+  .flag-badge {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 106, 106, 0.4);
+    color: var(--red);
+    background: var(--red-soft);
+  }
+
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 12px 10px;
+  }
+  .pagination a, .pagination span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 7px 12px;
+    border-radius: 7px;
+    text-decoration: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+  }
+  .pagination a:hover { color: var(--text-primary); border-color: var(--amber); }
+  .pagination .current { color: var(--navy-950); background: var(--amber); border-color: var(--amber); font-weight: 600; }
+  .pagination .disabled { opacity: 0.35; }
+
+  footer { margin-top: 20px; color: var(--text-muted); font-size: 0.78rem; font-family: 'IBM Plex Mono', monospace; text-align: center; letter-spacing: 0.02em; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <nav class="top-nav">
+    <a href="{% url 'chart:zfactor_chart' %}">Chart</a>
+    <a href="{% url 'chart:zfactor_data_list' %}" class="active">Complete Data Table</a>
+  </nav>
+
+  <header>
+    <h1>Complete <span>Raw Data</span> Table</h1>
+  </header>
+  <p class="subtitle">
+    Every row extracted from all 7 source simulation files, exactly as reported —
+    before any averaging. This is a read-only listing: rows cannot be added, edited,
+    or removed from this page. Rows flagged in red fell outside a physically plausible
+    Z range and were excluded from the chart's averaged isotherms.
+  </p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Total Rows (all files)</div>
+      <div class="value">{{ total_all_rows }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Rows Matching Filters</div>
+      <div class="value">{{ total_filtered_rows }}</div>
+    </div>
+    <div class="stat-card outlier">
+      <div class="label">Flagged Outliers</div>
+      <div class="value">{{ outlier_total }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Current Page</div>
+      <div class="value">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
+    </div>
+  </div>
+
+  <form class="filters" method="get">
+    <div class="field">
+      <label for="source_file">Source File</label>
+      <select name="source_file" id="source_file">
+        <option value="">All files</option>
+        {% for sf in source_files %}
+          <option value="{{ sf }}" {% if sf == selected_source_file %}selected{% endif %}>{{ sf }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="temperature">Temperature (°C)</label>
+      <select name="temperature" id="temperature">
+        <option value="">All temperatures</option>
+        {% for t in temperatures %}
+          <option value="{{ t }}" {% if selected_temperature == t|stringformat:"s" %}selected{% endif %}>{{ t|floatformat:0 }} °C</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field checkbox-field" style="flex-direction:row;">
+      <input type="checkbox" name="outliers_only" id="outliers_only" value="1" {% if outliers_only %}checked{% endif %}>
+      <label for="outliers_only" style="text-transform:none; letter-spacing:0;">Outliers only</label>
+    </div>
+    <button type="submit">Apply Filters</button>
+    {% if selected_source_file or selected_temperature or outliers_only %}
+      <a class="clear-link" href="{% url 'chart:zfactor_data_list' %}">Clear filters</a>
+    {% endif %}
+  </form>
+
+  <div class="table-shell">
+    <div class="table-header-bar">
+      <span class="title">Raw Simulation Rows</span>
+      <span class="readonly-badge">READ-ONLY</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Case / Label</th>
+            <th>Temperature (°C)</th>
+            <th>Pressure (psia)</th>
+            <th>Z-Factor</th>
+            <th>H2O Mole Frac</th>
+            <th>CH4 Mole Frac</th>
+            <th>CO2 Mole %</th>
+            <th>Pr</th>
+            <th>Tr</th>
+            <th>Phase</th>
+            <th>Source File</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in page_obj %}
+          <tr {% if row.is_outlier %}class="outlier-row"{% endif %}>
+            <td>{{ row.id }}</td>
+            <td>{{ row.case_label|default:"—" }}</td>
+            <td>{{ row.temperature_c }}</td>
+            <td>{{ row.pressure_psia }}</td>
+            <td>
+              {{ row.z_factor }}
+              {% if row.is_outlier %}<span class="flag-badge">outlier</span>{% endif %}
+            </td>
+            <td>{{ row.h2o_mole_frac|default:"—" }}</td>
+            <td>{{ row.ch4_mole_frac|default:"—" }}</td>
+            <td>{{ row.co2_mole_percent|default:"—" }}</td>
+            <td>{{ row.reduced_pressure|default:"—" }}</td>
+            <td>{{ row.reduced_temperature|default:"—" }}</td>
+            <td>{{ row.phase|default:"—" }}</td>
+            <td class="source-cell">{{ row.source_file }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?{% if base_query %}{{ base_query }}&{% endif %}page=1">« First</a>
+        <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Prev</a>
+      {% else %}
+        <span class="disabled">« First</span>
+        <span class="disabled">‹ Prev</span>
+      {% endif %}
+
+      <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+      {% if page_obj.has_next %}
+        <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next ›</a>
+        <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last »</a>
+      {% else %}
+        <span class="disabled">Next ›</span>
+        <span class="disabled">Last »</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <footer>200 ROWS PER PAGE · {{ total_all_rows }} TOTAL ROWS · CH4–CO2–H2O &amp; CO2–H2O PVT SIMULATION DATASET</footer>
+</div>
+
+</body>
+</html>
